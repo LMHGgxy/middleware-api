@@ -12,6 +12,7 @@ CORS(app)
 HTTP_SERVER_URL = {
     'API_SERV_PRIN': os.getenv('API_SERV'),
     'API_SERV': os.getenv('API_SERV2'),
+    "API_SERV_SAVE":os.getenv('API_SERV3'),
 }
 
 @app.route('/post_data', methods=['POST'])
