@@ -1,0 +1,6 @@
+{
+  "API_SERV_PRIN": "https://api1.example.com",
+  "API_SERV": "https://api2.example.com",
+  "API_SERV_SAVE": "https://api3.example.com",
+  "CUSTOM_API": "https://custom-api.example.com"
+}
