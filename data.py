@@ -1,44 +1,49 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+import json
 
 app = Flask(__name__)
 CORS(app)
 
-HTTP_SERVER_URL = {
-    'API_SERV_PRIN': os.getenv('API_SERV'),
-    'API_SERV': os.getenv('API_SERV2'),
-    "API_SERV_SAVE":os.getenv('API_SERV3'),
-}
+# Cargar configuraciones desde JSON
+with open('apis.json') as f:
+    HTTP_SERVER_URL = json.load(f)
 
 @app.route('/post_data', methods=['POST'])
 def intermediario():
     try:
         data = request.get_json()
-        host_option = data['host_option']
-        if host_option not in HTTP_SERVER_URL:
-            return jsonify(error="No se encontró el host"), 500
-        
-        HTTP_SERVER_URL_TEMP = HTTP_SERVER_URL[host_option]
-        path = data['path']
-        method = data['method']
+        host_option = data.get('host_option')
+        if not host_option or host_option not in HTTP_SERVER_URL:
+            return jsonify(error="Host no válido o no proporcionado."), 400
+
+        base_url = HTTP_SERVER_URL[host_option]
+        path = data.get('path', '')
+        method = data.get('method', 'GET').upper()
+        payload = data.get('data', {})
+
+        full_url = f"{base_url}{path}"
+        headers = data.get('headers', {})
 
         if method == 'GET':
-            response = requests.get(HTTP_SERVER_URL_TEMP + path)
+            response = requests.get(full_url, headers=headers, params=payload)
         elif method == 'POST':
-            response = requests.post(HTTP_SERVER_URL_TEMP + path, json=data['data'])
-        print(response.text)
+            response = requests.post(full_url, headers=headers, json=payload)
+        elif method == 'PUT':
+            response = requests.put(full_url, headers=headers, json=payload)
+        elif method == 'DELETE':
+            response = requests.delete(full_url, headers=headers, json=payload)
+        else:
+            return jsonify(error="Método HTTP no soportado."), 405
+
         try:
             return jsonify(response.json()), response.status_code
-        except:
-            return jsonify(error="No se pudo obtener la respuesta del servidor"), 500
-        
+        except ValueError:
+            return jsonify(text=response.text), response.status_code
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify(error=str(e)), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=4523)
